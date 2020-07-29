@@ -4,6 +4,9 @@
     "include": ["src/**/*", "server/**/*"],
     "exclude": ["node_modules/*", "__sapper__/*", "public/*"],
     "compilerOptions": {
-        "allowSyntheticDefaultImports": true
+        "allowSyntheticDefaultImports": true,
+        "paths": {
+            "true-myth/*": ["node_modules/true-myth/dist/es/*"]
+        }
     }
 }

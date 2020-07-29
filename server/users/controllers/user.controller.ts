@@ -1,5 +1,5 @@
-import type { RequestParamHandler } from 'express';
+import type { RequestHandler } from 'express';
 
-const insert: RequestParamHandler = (req, res) => {};
+const insert: RequestHandler = (req, res) => {};
 
 export { insert };

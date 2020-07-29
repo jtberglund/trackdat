@@ -41,13 +41,17 @@
         };
     }
 
-    let text = '';
+    let text = 'Loading';
 
     onMount(() => {
-        fetch('http://localhost:8080')
+        fetch('http://localhost:8080/status')
             .then((res) => res.text())
             .then((t) => {
-                text = t;
+                text = 'Loaded';
+                // text = t;
+            })
+            .catch((err) => {
+                text = err.message || 'Error';
             });
     });
 </script>

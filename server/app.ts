@@ -1,26 +1,23 @@
 import express from 'express';
-import cors from 'cors';
-import mongoose from 'mongoose';
+import Logger from './loaders/logger';
+import config from './config';
 
-import * as UserController from './users/controllers/user.controller';
+async function start() {
+    const app = express();
 
-const app = express();
-const PORT = process.env.PORT || 8080;
+    await require('./loaders').default({ expressApp: app });
 
-app.use(
-    cors({
-        origin: 'http://localhost:5000',
-    })
-);
+    app.listen(config.port, (err) => {
+        if (err) {
+            Logger.error(err);
+            process.exit(1);
+        }
+        Logger.info(`
+            ################################################
+            🛡️  Server listening on port: ${config.port} 🛡️ 
+            ################################################
+        `);
+    });
+}
 
-// define a route handler for the default home page
-app.get('/', (req, res) => {
-    res.send('Hello worlds!');
-});
-
-// start the Express server
-app.listen(PORT, () => {
-    console.log(`server started at http://localhost:${PORT}`);
-});
-
-app.post('/users', [UserController.insert]);
+start();

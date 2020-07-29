@@ -2,14 +2,16 @@
     "name": "svelte-app",
     "version": "1.0.0",
     "scripts": {
-        "clean": "rimraf server/**/*.js",
-        "dev": "rollup -c -w",
-        "dev:server": "concurrently \"npm:build:server\" \"npm:start:server\"",
+        "clean": "rimraf dist",
+        "dev:ui": "rollup -c -w",
+        "dev:server": "npm run build:server && concurrently \"npm run build:server:watch\" \"npm run start:server\"",
         "build": "npm run build:ui && npm run build:server",
         "build:ui": "rollup -c",
-        "build:server": "tsc server/*.ts --watch --preserveWatchOutput --esModuleInterop",
-        "start": "sirv public",
-        "start:server": "nodemon server/app.js --exec 'ts-node'",
+        "build:server": "tsc --project tsconfig.server.json --preserveWatchOutput --esModuleInterop --outDir dist",
+        "build:server:watch": "tsc --project tsconfig.server.json   --watch --preserveWatchOutput --esModuleInterop --outDir dist",
+        "start": "concurrently \"npm run start:ui\" \"npm run start:server\"",
+        "start:ui": "sirv public",
+        "start:server": "nodemon dist/app.js --exec 'ts-node'",
         "validate": "svelte-check"
     },
     "devDependencies": {
@@ -25,6 +27,7 @@
         "@types/ramda": "^0.27.12",
         "concurrently": "^5.2.0",
         "cors": "^2.8.5",
+        "dotenv": "^8.2.0",
         "mongoose": "^5.9.26",
         "node-sass": "^4.14.1",
         "nodemon": "^2.0.4",
@@ -44,19 +47,21 @@
     "dependencies": {
         "classnames": "^2.2.6",
         "express": "^4.17.1",
-        "ramda": "^0.27.0"
+        "method-override": "^3.0.0",
+        "ramda": "^0.27.0",
+        "true-myth": "^4.0.0",
+        "winston": "^3.3.3"
     },
     "nodemonConfig": {
+        "watch": [
+            "dist"
+        ],
         "ignore": [
             "**/*.test.ts",
             "**/*.spec.ts",
             ".git",
             "node_modules"
         ],
-        "watch": [
-            "server"
-        ],
-        "exec": "npm dev:server:start",
-        "ext": "ts"
+        "ext": "js"
     }
 }
