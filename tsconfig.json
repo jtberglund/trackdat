@@ -1,10 +1,11 @@
 {
     "extends": "@tsconfig/svelte/tsconfig.json",
 
-    "include": ["src/**/*", "server/**/*"],
+    "include": ["src/**/*", "common/**/*"],
     "exclude": ["node_modules/*", "__sapper__/*", "public/*"],
     "compilerOptions": {
         "allowSyntheticDefaultImports": true,
+        "baseUrl": ".",
         "paths": {
             "true-myth/*": ["node_modules/true-myth/dist/es/*"]
         }

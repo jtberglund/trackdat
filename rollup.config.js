@@ -5,6 +5,10 @@ import livereload from 'rollup-plugin-livereload';
 import { terser } from 'rollup-plugin-terser';
 import sveltePreprocess from 'svelte-preprocess';
 import typescript from '@rollup/plugin-typescript';
+import dotenv from 'dotenv';
+import injectEnv from 'rollup-plugin-inject-process-env';
+import proxyServe from 'rollup-plugin-serve-proxy';
+// import typescript from 'rollup-plugin-typescript2';
 
 const production = !process.env.ROLLUP_WATCH;
 
@@ -38,11 +42,25 @@ export default {
             dedupe: ['svelte'],
         }),
         commonjs(),
-        typescript({ sourceMap: !production }),
+        typescript({
+            sourceMap: !production,
+            noEmitOnError: false,
+            // include: ['src/**/*', 'common/**/*'],
+        }),
 
-        // In dev mode, call `npm run start` once
-        // the bundle has been generated
-        !production && serve(),
+        !production &&
+            proxyServe({
+                open: true,
+                verbose: true,
+                contentBase: ['public'],
+                headers: {
+                    'Access-Control-Allow-Origin': '*',
+                },
+                port: 5000,
+                proxy: {
+                    api: 'http://localhost:8080',
+                },
+            }),
 
         // Watch the `public` directory and refresh the
         // browser on changes when not in production
@@ -51,29 +69,18 @@ export default {
         // If we're building for production (npm run build
         // instead of npm run dev), minify
         production && terser(),
+
+        // Inject dotenv variables
+        // injectEnv({
+        //     envFilePath: '.env',
+        // }),
+        injectEnv({
+            TEST: 'some test',
+            ...dotenv.config().parsed,
+        }),
+        // dotenv(),
     ],
     watch: {
         clearScreen: false,
     },
 };
-
-function serve() {
-    let started = false;
-
-    return {
-        writeBundle() {
-            if (!started) {
-                started = true;
-
-                require('child_process').spawn(
-                    'npm',
-                    ['run', 'start:ui', '--', '--dev'],
-                    {
-                        stdio: ['ignore', 'inherit', 'inherit'],
-                        shell: true,
-                    }
-                );
-            }
-        },
-    };
-}

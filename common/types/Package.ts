@@ -1,8 +1,9 @@
 import type Carrier from './Carrier';
 
-interface TrackingInfo {
+interface Package {
+    id: string;
     trackingNumber: string;
     carrier: Carrier;
 }
 
-export default TrackingInfo;
+export default Package;

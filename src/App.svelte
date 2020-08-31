@@ -1,73 +1,47 @@
 <script lang="ts">
-    import type TrackingInfo from './types/TrackingInfo';
-    import Carrier from './types/Carrier';
-    import StatusText from './components/StatusText.svelte';
-    import { onMount } from 'svelte';
-    import StatusType from './types/StatusType';
+    import { onMount, setContext } from 'svelte';
+    import GoogleLoginButton from './components/GoogleLoginButton.svelte';
+    import GoogleSignOutButton from './components/GoogleSignOutButton.svelte';
+    import AddPackageForm from './components/AddPackageForm.svelte';
+    import type { Package } from 'common/types';
+    import TrackingList from './components/TrackingList.svelte';
+    import packageStore from './stores/packages';
 
-    let myTrackingInfo: TrackingInfo[] = [];
-    let trackingNumber = '';
-    let carrier: Carrier = undefined;
-    let status = {
-        text: '',
-        type: StatusType.INFO,
-    };
+    let packages: Package[] = [];
 
-    function addTrackingInfo() {
-        if (!carrier) {
-            status = {
-                text: 'Please select a carrier',
-                type: StatusType.ERROR,
-            };
-            return;
-        }
-        if (!trackingNumber) {
-            status = {
-                text: 'Please enter a tracking number',
-                type: StatusType.ERROR,
-            };
-            return;
-        }
-
-        myTrackingInfo.push({
-            trackingNumber,
-            carrier,
-        });
-        trackingNumber = '';
-        carrier = undefined;
-        status = {
-            text: 'Successfully added',
-            type: StatusType.SUCCESS,
-        };
-    }
-
-    let text = 'Loading';
-
-    onMount(() => {
-        fetch('http://localhost:8080/status')
-            .then((res) => res.text())
+    function retrievePackages() {
+        fetch('http://localhost:8080/api/packages')
+            .then((res) => res.json())
             .then((t) => {
-                text = 'Loaded';
-                // text = t;
+                const responseStr = JSON.stringify(t, null, 2);
+                packages = JSON.parse(responseStr).packages;
+                console.log({ packages });
+                packageStore.set(packages);
             })
             .catch((err) => {
-                text = err.message || 'Error';
+                // text = err.message || 'Error';
             });
+    }
+
+    onMount(() => {
+        retrievePackages();
     });
+
+    function onPackageAdd(newPackage: Package) {
+        packages = [...packages, newPackage];
+        fetch('http://localhost:8080/api/packages', {
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            method: 'POST',
+            body: JSON.stringify(newPackage),
+        }).then(retrievePackages);
+    }
 </script>
 
-<select name="carrier" id="carrier-select" bind:value={carrier}>
-    <option value={undefined} />
-    {#each Object.values(Carrier) as c}
-        <option value={c}>{c}</option>
-    {/each}
-</select>
-<input name="tracking-number" type="text" bind:value={trackingNumber} />
+<AddPackageForm onAdd={onPackageAdd} />
 
-<button on:click={addTrackingInfo}>Add</button>
+<TrackingList />
 
-{#if status.text}
-    <StatusText statusType={status.type}>{status.text}</StatusText>
-{/if}
-
-<p>Text: {text}</p>
+<GoogleLoginButton />
+<GoogleSignOutButton />

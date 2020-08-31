@@ -3,41 +3,72 @@ import bodyParser from 'body-parser';
 import cors from 'cors';
 import routes from '../api';
 import config from '../config';
+import Logger from './logger';
+import { getRoutes } from '../utils/express-util';
+import cookieParser from 'cookie-parser';
+import passport from 'passport';
+import { Strategy, ExtractJwt } from 'passport-jwt';
+import User from '../models/user.model';
 
 // https://github.com/santiq/bulletproof-nodejs/blob/master/src/loaders/express.ts
 export default ({ app }: { app: Application }) => {
+    passport.use(
+        new Strategy(
+            {
+                secretOrKey: 'secret123',
+                jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
+            },
+            (jwtPayload, done) => {
+                console.log(jwtPayload);
+                User.findOne({ id: jwtPayload.sub }, function (err, user) {
+                    if (err) {
+                        return done(err, false);
+                    }
+                    if (user) {
+                        return done(null, user);
+                    } else {
+                        return done(null, false);
+                        // or you could create a new account
+                    }
+                });
+            }
+        )
+    );
+
     /**
      * Health Check endpoints
      */
     app.get('/status', (req, res) => {
-        res.status(200).end();
+        res.status(200).send('ok').end();
     });
     app.head('/status', (req, res) => {
-        res.status(200).end();
+        res.status(200).send('ok').end();
     });
 
-    // Useful if you're behind a reverse proxy (Heroku, Bluemix, AWS ELB, Nginx, etc)
-    // It shows the real origin IP in the heroku or Cloudwatch logs
     app.enable('trust proxy');
 
-    // The magic package that prevents frontend developers going nuts
-    // Alternate description:
-    // Enable Cross Origin Resource Sharing to all origins by default
+    // Enable CORS for development
     app.use(
         cors({
             origin: 'http://localhost:5000',
         })
     );
 
-    // Some sauce that always add since 2014
     // "Lets you use HTTP verbs such as PUT or DELETE in places where the client doesn't support it."
-    // Maybe not needed anymore ?
     app.use(require('method-override')());
 
     // Middleware that transforms the raw string of req.body into json
     app.use(bodyParser.json());
+
+    app.use(cookieParser());
+
     // Load API routes
-    app.use(config.api.prefix, routes());
+    const router = routes();
+    app.use(config.api.prefix, router);
+    let registeredEndpoints = '\nREGISTERED ENDPOINTS';
+    Logger.info(app._router.stack);
+    getRoutes(app).forEach((r) => (registeredEndpoints += '\n- ' + r));
+    Logger.info(registeredEndpoints);
 
     /// catch 404 and forward to error handler
     app.use((req, res, next) => {
