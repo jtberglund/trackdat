@@ -7,19 +7,18 @@
     import TrackingList from './components/TrackingList.svelte';
     import packageStore from './stores/packages';
 
-    let packages: Package[] = [];
-
     function retrievePackages() {
         fetch('http://localhost:8080/api/packages')
             .then((res) => res.json())
             .then((t) => {
                 const responseStr = JSON.stringify(t, null, 2);
-                packages = JSON.parse(responseStr).packages;
+                const { packages } = JSON.parse(responseStr);
                 console.log({ packages });
                 packageStore.set(packages);
             })
             .catch((err) => {
-                // text = err.message || 'Error';
+                // TODO error screen
+                console.error(err);
             });
     }
 
@@ -28,7 +27,6 @@
     });
 
     function onPackageAdd(newPackage: Package) {
-        packages = [...packages, newPackage];
         fetch('http://localhost:8080/api/packages', {
             headers: {
                 'Content-Type': 'application/json',
